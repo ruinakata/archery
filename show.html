@@ -1,0 +1,70 @@
+
+
+<!DOCTYPE html>
+<html lang="en">
+    <head>
+        <meta charset="utf-8">
+        <meta http-equiv="X-UA-Compatible" content="IE=edge">
+        <title>Archery Game!</title>
+
+        <link rel="stylesheet" href="style.css"> 
+    </head>
+    <body>
+
+    <div class="screen">
+        <button class="startbutton">start</button>
+        <div>
+        <img id="arrow" src="arrow.png">
+        </div>
+    </div>
+
+   
+      <label>Enter X velocity</label>
+      <input id="xvel" type="text"/>
+      <br>
+      <label>Enter Y velocity</label>
+      <input id="yvel" type="text"/>
+      <button id="submitbutton" type="submit">Submit!</button>
+    
+
+
+      <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
+      <script type="text/javascript">
+
+        
+
+            var randomPx = function (){
+              return Math.floor(Math.random() * 50) + "px";
+            };
+
+
+            var moveButton = function (){
+              $("#arrow").css("marginBottom", randomPx());
+              $("#arrow").css("marginLeft", randomPx());
+              setTimeout(moveButton, 10)
+            };
+
+            $(document).on("click", ".startbutton", moveButton);
+
+            var xvelocity = 0;
+            var yvelocity = 0;
+
+            $('#submitbutton').on('click', function(){
+              xvelocity = parseInt($('#xvel').val());
+              yvelocity = parseInt($('#yvel').val());
+              console.log(xvelocity);
+              console.log(yvelocity);
+            });
+
+
+
+
+
+
+      </script>
+
+    </body>
+</html>
+
+
+
