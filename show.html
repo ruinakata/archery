@@ -26,21 +26,33 @@
       <input id="yvel" type="text"/>
       <button id="submitbutton" type="submit">Submit!</button>
     
-
+      <p>x:20m/s and y:25m/s looks pretty good </p>
 
       <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
       <script type="text/javascript">
 
         
-
+            var xpos = 0;
             var movex = function(){
               var xi = parseInt($("#arrow").css("left").slice(0,-2));
-              return xi - 1 + "px"
+              xpos = xvelocity * time * 10; 
+              if (xpos < 900) {              
+                return (900 - xpos) + 'px'}
+              else {
+                return (10 + 'px')
+                }
+
             };
 
             var movey = function(){
               var xi = parseInt($("#arrow").css("bottom").slice(0,-2));
-              return xi + 1 + "px"
+              ypos = (yvelocity * time + 0.5 * (-9.81 * time * time ))*10;
+              if (ypos < 0){
+                return 20 + 'px'
+              }
+              else {
+                return (20 + ypos) + 'px'
+              }
             };
 
 
@@ -50,17 +62,19 @@
             $('#submitbutton').on('click', function(){
               xvelocity = parseInt($('#xvel').val());
               yvelocity = parseInt($('#yvel').val());
+              $('.startbutton').css('visibility', '');
             });
 
+            var time = 0;
+
             var moveButton = function (){
-              // $("#arrow").css("marginBottom", movey());
               $("#arrow").css("bottom", movey());
               $("#arrow").css("left", movex());;
+              time = time + 0.01;
               setTimeout(moveButton, 10)
             };
 
             $(document).on("click", ".startbutton", moveButton);
-
 
 
 
