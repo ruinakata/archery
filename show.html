@@ -11,12 +11,7 @@
     </head>
     <body>
 
-    <div class="screen">
-        <button class="startbutton">start</button>
-        <div>
-        <img id="arrow" src="arrow.png">
-        </div>
-    </div>
+    <div id="screen"></div>
 
    
       <label>Enter X velocity</label>
@@ -24,42 +19,206 @@
       <br>
       <label>Enter Y velocity</label>
       <input id="yvel" type="text"/>
-      <button id="submitbutton" type="submit">Submit!</button>
+      <button id="start">Fire!</button>
     
 
 
       <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.10.2/jquery.min.js"></script>
       <script type="text/javascript">
 
+      function Vector(x, y) {
+        this.x = +(x || 0);
+        this.y = +(y || 0);
+        this.updateWith = function(seconds, other) {
+          this.x += seconds / 1000 * other.x;
+          this.y += seconds / 1000 * other.y;
+        };
+        this.plus = function(other) {
+          return new Vector(this.x + other.x, this.y + other.y);
+        };
+        this.degree = function() {
+          return this.x ? Math.atan(this.y/this.x) / Math.PI * 180 : this.y > 0 ? 90 : -90;
+        };
+        this.magnitude = function() {
+          return Math.sqrt(this.x * this.x + this.y * this.y);
+        };
+      }
+      Vector.gravity = function(){
+        return new Vector(0, -981);
+      };
+      Vector.toComponents = function(angle, magnitude) {
+        return new Vector(angle);
+      };
         
+      function Projectile($projectileNode, baseOnCollision) {
+        var instance = this,
+          self = Projectile,
+          properties = {
+            position: new Vector($projectileNode.offsetLeft, $projectileNode.parentNode.offsetHeight - $projectileNode.offsetTop),
+            velocity: new Vector(),
+            acceleration: new Vector()
+          },
+          collisionActions = [];
 
-            var movex = function(){
-              var xi = parseInt($("#arrow").css("left").slice(0,-2));
-              return xi - 1 + "px"
-            };
 
-            var movey = function(){
-              var xi = parseInt($("#arrow").css("bottom").slice(0,-2));
-              return xi + 1 + "px"
-            };
+        instance.render = function() {
+          $projectileNode.style.left = instance.position().x + 'px';
+          $projectileNode.style.bottom = instance.position().y + 'px';
+          $projectileNode.style['-webkit-transform'] = 'rotate(' + (-instance.velocity().degree()) + 'deg)';
+          return instance;
+        }
+
+        instance.position = accessor('position');
+        instance.velocity = accessor('velocity');
+        instance.acceleration = accessor('acceleration');
 
 
-            var xvelocity = 0;
-            var yvelocity = 0;
+        function accessor(property) {
+          return function(value) {
+            if (value) {
+              properties[property] = value;
+              return instance;
+            }
+            return properties[property];
+          };
+        }
 
-            $('#submitbutton').on('click', function(){
-              xvelocity = parseInt($('#xvel').val());
-              yvelocity = parseInt($('#yvel').val());
-            });
 
-            var moveButton = function (){
-              // $("#arrow").css("marginBottom", movey());
-              $("#arrow").css("bottom", movey());
-              $("#arrow").css("left", movex());;
-              setTimeout(moveButton, 10)
-            };
+        instance.applyForce = function(seconds, externalForce) {
+          instance.velocity().updateWith(seconds, instance.acceleration().plus(externalForce));
+          instance.position().updateWith(seconds, instance.velocity());
+          instance.render();
+        };
 
-            $(document).on("click", ".startbutton", moveButton);
+        instance.notifyCollision = function(environment) {
+          environment.removeObject(instance);
+          if (baseOnCollision)
+            baseOnCollision();
+        };
+
+      }
+
+      function Environment($container) {
+        var self = Environment,
+          instance = this,
+          objects = [],
+          frameDuration = 16,
+          forces = [],
+          frameTimer;
+
+        forces.push(Vector.gravity());
+
+
+        instance.start = function() {
+          if (!frameTimer)
+            frameTimer = setInterval(stepFrame, frameDuration);
+          return instance;
+        };
+
+        instance.stop = function() {
+          if (frameTimer) {
+            clearInterval(frameTimer);
+            frameTimer = null;
+          }
+          return instance;
+        };
+
+        function updateObjects() {
+          objects.forEach(sendForceFrame);
+        }
+
+        function sendForceFrame(object) {
+          object.applyForce(frameDuration, netForce());
+        }
+
+        function netForce() {
+          return forces.reduce(function(memo, next) {
+            return memo.plus(next);
+          }, new Vector());
+        }
+
+        function sendCollision(object) {
+          object.notifyCollision(instance);
+        }
+
+        function detectCollisions() {
+          objects.filter(hasCollision).forEach(sendCollision);
+        }
+
+        function hasCollision(object) {
+          return object.position().y <= 0;
+        }
+
+        function stepFrame() {
+          updateObjects();
+          detectCollisions();
+          if (!objects.length)
+            instance.stop();
+        }
+
+        instance.addObject = function(projectile) {
+          objects.push(projectile);
+          projectile.render();
+          return instance;
+        };
+        instance.removeObject = function(item) {
+          return objects.splice(objects.indexOf(item), 1)[0];
+        };
+
+      }
+
+      var getUserVelocity = (function() {
+        var xField = document.querySelector('#xvel'),
+          yField = document.querySelector('#yvel');
+
+        xField.value = '450';
+        yField.value = '1000';
+
+        function applyVelocity() {
+          setTimeout(function() {
+            physicsArrow.velocity(getUserVelocity()).render();
+          }, 0);
+        }
+
+        xField.addEventListener('keydown', applyVelocity);
+        yField.addEventListener('keydown', applyVelocity);
+
+        return function() {
+          return new Vector(xField.value, yField.value);
+        };
+      })();
+
+      var actionButton = document.querySelector('#start');
+
+      function fireArrow(ev) {
+        archeryRange.start();
+        archeryRange.addObject(physicsArrow);
+        physicsArrow = paintNewArrow();
+      }
+
+      function paintNewArrow() {
+        var arrow = document.createElement('img');
+        arrow.classList.add('arrow');
+        arrow.style.bottom = '10px';
+        arrow.style.left = '0px';
+        arrow.style['-webkit-transform'] = '';
+        arrow.src = './arrow.png';
+        rawEnvironment.appendChild(arrow);
+        return new Projectile(arrow)
+          .velocity(getUserVelocity())
+          .render();
+      };
+
+      var rawEnvironment = document.querySelector('#screen');
+      var physicsArrow = paintNewArrow();
+
+      var archeryRange = new Environment(rawEnvironment);
+
+      
+
+      
+
+      actionButton.addEventListener('click', fireArrow);
 
 
 

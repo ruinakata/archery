@@ -1,15 +1,12 @@
-.startbutton {
-	position: absolute; bottom: -100px; left: 50px;
-}
-
-#arrow {
+.arrow {
 	width: 70px;
-	position: absolute; bottom: -100px; left: 900px;
+	position: absolute;
 }
 
-.screen {
+#screen {
 	background-color: pink;
 	height: 600px;
 	width: 1000px;
+	position: relative;
 }
 
